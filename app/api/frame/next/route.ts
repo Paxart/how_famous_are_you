@@ -5,7 +5,7 @@ export async function GET() {
     frames: [
       {
         version: "vNext",
-        image: "https://how-famous-are-you.vercel.app/vercel.svg", // imagen temporal
+        image: "https://how-famous-are-you.vercel.app/vercel.svg",
         buttons: [
           {
             label: "Generate Yours",
@@ -13,3 +13,7 @@ export async function GET() {
             target: "https://how-famous-are-you.vercel.app/api/frame/next",
           },
         ],
+      },
+    ],
+  });
+}
