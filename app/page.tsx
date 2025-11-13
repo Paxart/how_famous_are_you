@@ -3,101 +3,115 @@
 import { useEffect, useRef, useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 
-export default function Page() {
-  const [love, setLove] = useState<string>("");
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const fileRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+type Option = { value: string; label: string };
+const ACTORS: Option[] = [
+  { value: "scarlett johansson", label: "Scarlett Johansson" },
+  { value: "brad pitt", label: "Brad Pitt" },
+  { value: "keanu reeves", label: "Keanu Reeves" },
+  { value: "zendaya", label: "Zendaya" },
+  { value: "tom cruise", label: "Tom Cruise" },
+  { value: "margot robbie", label: "Margot Robbie" },
+];
 
-  // Quita splash de Farcaster cuando está lista
+const MOVIES: Option[] = [
+  { value: "barbie (2023)", label: "Barbie (2023)" },
+  { value: "mission impossible", label: "Mission: Impossible" },
+  { value: "john wick", label: "John Wick" },
+  { value: "la la land", label: "La La Land" },
+  { value: "lost in translation", label: "Lost in Translation" },
+  { value: "fight club", label: "Fight Club" },
+  { value: "dune", label: "Dune" },
+  { value: "top gun", label: "Top Gun" },
+];
+
+export default function Page() {
+  const [actor, setActor] = useState<string>(ACTORS[0].value);
+  const [movie, setMovie] = useState<string>(MOVIES[0].value);
+  const [love, setLove] = useState<string>("Farcaster");
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   useEffect(() => {
-    sdk.actions.ready();
+    sdk.actions.ready(); // quita el splash de Farcaster
   }, []);
 
-  function draw(img?: HTMLImageElement) {
+  function draw(baseImg: HTMLImageElement) {
     const cnv = canvasRef.current!;
     const ctx = cnv.getContext("2d")!;
     const W = 1200, H = 1200; // 1:1
     cnv.width = W; cnv.height = H;
 
-    // Fondo blanco
-    ctx.fillStyle = "#ffffff";
+    // fondo blanco
+    ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, W, H);
 
-    // Imagen de usuario
-    const baseImg = img ?? imgRef.current;
-    if (baseImg) {
-      const scale = Math.max(W / baseImg.width, H / baseImg.height);
-      const iw = baseImg.width * scale;
-      const ih = baseImg.height * scale;
-      const ix = (W - iw) / 2;
-      const iy = (H - ih) / 2;
-      ctx.drawImage(baseImg, ix, iy, iw, ih);
-    }
+    // imagen generada (caricatura)
+    const scale = Math.max(W / baseImg.width, H / baseImg.height);
+    const iw = baseImg.width * scale;
+    const ih = baseImg.height * scale;
+    const ix = (W - iw) / 2;
+    const iy = (H - ih) / 2;
+    ctx.drawImage(baseImg, ix, iy, iw, ih);
 
-    // Franja inferior
+    // franja inferior
     ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(0, H - 240, W, 240);
+    ctx.fillRect(0, H - 220, W, 220);
 
-    // Texto “I ❤️ xxx”
-    const line = `I ❤️ ${love || "Farcaster"}`;
-    ctx.font = "bold 120px system-ui, -apple-system, Segoe UI, Roboto";
+    // texto “I ❤️ …”
+    ctx.font = "bold 110px system-ui, -apple-system, Segoe UI, Roboto";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(line, W / 2, H - 120);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(`I ❤️ ${love || "Farcaster"}`, W / 2, H - 110);
 
-    // Vista previa
-    const data = cnv.toDataURL("image/png");
-    setPreviewUrl(data);
+    setPreviewUrl(cnv.toDataURL("image/png"));
   }
 
-  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function generate() {
+    // llama al backend para que cree la caricatura del actor en estilo de la peli
+    const res = await fetch("/api/caricature", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        actor,
+        movie,
+        // estilos que puedes tunear: "comic cel-shading", "acuarela", etc.
+        styleHint: "bright cartoon caricature, poster-like composition",
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert("No se pudo generar la caricatura: " + (err?.error || res.statusText));
+      return;
+    }
+    const { caricatureUrl } = await res.json();
 
     const img = new Image();
-    img.onload = () => {
-      imgRef.current = img;
-      draw(img);
-    };
-    img.src = URL.createObjectURL(file);
-  }
-
-  function onLoveChange(v: string) {
-    setLove(v);
-    // Si ya hay imagen, redibujar
-    if (imgRef.current) draw();
+    img.crossOrigin = "anonymous";
+    img.onload = () => draw(img);
+    img.src = caricatureUrl;
   }
 
   async function share() {
-    // Asegura tener previsualización
-    if (!previewUrl && imgRef.current) draw();
-
     if (!previewUrl) {
-      alert("Sube una imagen y pulsa Generar primero.");
+      alert("Genera primero la imagen 😅");
       return;
     }
-
-    // Sube a Blob para obtener URL pública
-    const res = await fetch("/api/upload", {
+    // sube a Blob para tener URL pública
+    const upload = await fetch("/api/upload", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dataUrl: previewUrl }),
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      alert("Fallo subiendo la imagen: " + (err?.error || res.statusText));
+    if (!upload.ok) {
+      const err = await upload.json().catch(() => ({}));
+      alert("Fallo subiendo imagen: " + (err?.error || upload.statusText));
       return;
     }
+    const { publicUrl } = await upload.json();
 
-    const { publicUrl } = await res.json();
-
-    // Abre el composer con la imagen y texto
     await sdk.actions.openCastComposer({
-      text: `I ❤️ ${love || "Farcaster"} — hecho con How Famous Are You`,
+      text: `Caricatura de ${actor} inspirada en "${movie}" — hecho con How Famous Are You`,
       attachments: [{ url: publicUrl }],
     });
   }
@@ -106,47 +120,24 @@ export default function Page() {
     <main className="min-h-screen flex flex-col items-center gap-4 p-6">
       <h1 className="text-3xl font-bold">How Famous Are You</h1>
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        onChange={onFileChange}
-        className="border p-3 rounded w-full max-w-md"
-      />
-
-      <input
-        type="text"
-        placeholder="¿A quién amas? (p.ej., SUI)"
-        value={love}
-        onChange={(e) => onLoveChange(e.target.value)}
-        className="border p-3 rounded w-full max-w-md"
-      />
-
-      <div className="flex gap-3">
-        <button
-          onClick={() => draw()}
-          className="px-4 py-2 rounded bg-black text-white"
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
+        <select
+          value={actor}
+          onChange={(e) => setActor(e.target.value)}
+          className="border p-3 rounded"
         >
-          Generar
-        </button>
+          {ACTORS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+        </select>
 
-        <button
-          onClick={share}
-          className="px-4 py-2 rounded bg-purple-600 text-white"
+        <select
+          value={movie}
+          onChange={(e) => setMovie(e.target.value)}
+          className="border p-3 rounded"
         >
-          Compartir en Farcaster
-        </button>
-      </div>
+          {MOVIES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+        </select>
 
-      {previewUrl ? (
-        <img
-          src={previewUrl}
-          alt="preview"
-          className="w-full max-w-md rounded shadow"
-        />
-      ) : (
-        <canvas ref={canvasRef} className="hidden" />
-      )}
-    </main>
-  );
-}
+        <input
+          value={love}
+          onChange={(e) => setLove(e.target.value)}
+          placeholder="¿A quién
