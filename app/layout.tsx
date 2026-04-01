@@ -1,17 +1,25 @@
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { Providers } from "./providers";
+
 export const metadata: Metadata = {
-  title: "How Famous Are You",
-  description: "Genera tu imagen I ❤️ personalizada y compártela en Farcaster",
+  title: "how-famous-are-you",
+  description: "Farlander mini apps and CineTrivia",
   other: {
-    "fc:miniapp": JSON.stringify({
-      version: "1",
-      imageUrl: "https://how-famous-are-you.vercel.app/og.png",
-      button: {
-        title: "Genera el tuyo",
-        action: {
-          type: "launch_miniapp",
-          url: "https://how-famous-are-you.vercel.app/",
-        },
-      },
-    }),
+    "base:app_id": "69ccd14997b57b220304871d",
   },
 };
+
+interface RootLayoutProps {
+  children: ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}

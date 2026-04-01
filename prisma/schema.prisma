@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Score {
+  id          String   @id @default(cuid())
+  triviaId    String
+  fid         Int
+  score       Int
+  username    String?
+  displayName String?
+  pfpUrl      String?
+  createdAt   DateTime @default(now())
+
+  @@unique([triviaId, fid])
+  @@index([triviaId])
+}

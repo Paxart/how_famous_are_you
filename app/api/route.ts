@@ -1,26 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export async function POST(req: NextRequest) {
-  try {
-    const { dataUrl } = await req.json();
+const prisma = new PrismaClient();
 
-    if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
-      return NextResponse.json({ error: "Invalid image data" }, { status: 400 });
+export async function POST(req: Request) {
+  const data = await req.json();
+
+  const { fid, username, displayName, pfpUrl, triviaId, score } = data;
+
+  // Solo guardar si no existe ya una puntuación previa
+  const existing = await prisma.score.findFirst({
+    where: {
+      fid,
+      triviaId
     }
+  });
 
-    const base64 = dataUrl.split(",")[1];
-    const buffer = Buffer.from(base64, "base64");
-
-    const filename = `how-famous/${Date.now()}.png`;
-    const { url } = await put(filename, buffer, {
-      access: "public",
-      contentType: "image/png",
-      cacheControlMaxAge: 60 * 60 * 24 * 365,
-    });
-
-    return NextResponse.json({ publicUrl: url });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "upload failed" }, { status: 500 });
+  if (existing) {
+    return NextResponse.json({ message: "Already played" });
   }
+
+  const newScore = await prisma.score.create({
+    data: {
+      fid,
+      username,
+      displayName,
+      pfpUrl,
+      triviaId,
+      score
+    }
+  });
+
+  return NextResponse.json(newScore);
 }

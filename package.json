@@ -6,17 +6,26 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
+    "@base-org/account": "^2.5.3",
     "@farcaster/miniapp-sdk": "^0.2.1",
+    "@prisma/client": "^6.9.0",
+    "@tanstack/react-query": "^5.96.1",
     "@vercel/blob": "^2.0.0",
-    "next": "16.0.1",
+    "next": "^16.1.1",
     "openai": "^6.7.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "prisma": "^6.9.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "viem": "^2.47.6",
+    "wagmi": "^3.6.0"
   },
   "devDependencies": {
+    "@prisma/config": "^7.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

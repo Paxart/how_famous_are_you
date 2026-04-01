@@ -1,0 +1,39 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjE1ODQ4LCJ0eXBlIjoiYXV0aCIsImtleSI6IjB4RDgzY2U4MjUyMzQ1ZkM0QzI5MzViY2ZGMjhhODNCZWM1NDYxMUI1OCJ9",
+    "payload": "eyJkb21haW4iOiJob3ctZmFtb3VzLWFyZS15b3UudmVyY2VsLmFwcCJ9",
+    "signature": "QFWisN6fjozxkdpy1OW2aLTka3pIx7V4AWcpijpSyDBYhoJwjxa0ojG0UbNHIwrqrhp1w2pgyFjmbV3pTu2Q6xw="
+  },
+
+  "frame": {
+    "version": "1",
+    "name": "Farlander CineTrivia",
+
+    "iconUrl": "https://how-famous-are-you.vercel.app/cinetrivia/Farlander_Director.png",
+    "homeUrl": "https://how-famous-are-you.vercel.app/cinetrivia",
+
+    "imageUrl": "https://how-famous-are-you.vercel.app/cinetrivia/Farlander_Director.png",
+
+    "buttonTitle": "Jugar CineTrivia",
+
+    "splashImageUrl": "https://how-famous-are-you.vercel.app/cinetrivia/Farlander_Director.png",
+    "splashBackgroundColor": "#000000",
+
+    "subtitle": "Daily movie trivia",
+    "description": "Daily movie trivia with Farlander. Guess, play and share!",
+
+    "primaryCategory": "games",
+    "tags": ["movies", "trivia"],
+
+    "screenshotUrls": [],
+
+    "heroImageUrl": "https://how-famous-are-you.vercel.app/cinetrivia/Farlander_Director.png",
+    "tagline": "Movie trivia with Farlander",
+
+    "ogTitle": "Farlander CineTrivia",
+    "ogDescription": "Daily movie trivia. Unlock ranks and share your score on Farcaster.",
+    "ogImageUrl": "https://how-famous-are-you.vercel.app/cinetrivia/Farlander_Director.png",
+
+    "noindex": false
+  }
+}
