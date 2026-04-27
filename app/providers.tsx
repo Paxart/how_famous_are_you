@@ -5,17 +5,25 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createConfig, http, WagmiProvider } from "wagmi";
 import { base } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+import { injected, coinbaseWallet } from "wagmi/connectors";
 
 interface ProvidersProps {
   children: ReactNode;
 }
 
 const wagmiConfig = createConfig({
+  ssr: true,
   chains: [base],
-  connectors: [injected()],
+  connectors: [
+    injected({
+      shimDisconnect: true,
+    }),
+    coinbaseWallet({
+      appName: "Base Trace Score",
+    }),
+  ],
   transports: {
-    [base.id]: http(),
+    [base.id]: http("https://mainnet.base.org"),
   },
 });
 

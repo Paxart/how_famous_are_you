@@ -55,46 +55,55 @@ export default function MiniAppClient() {
   // ---------------------------------------------------------------------------
   // Inicialización segura
   // ---------------------------------------------------------------------------
-  useEffect(() => {
-    let cancelled = false;
+useEffect(() => {
+  let cancelled = false;
 
-    const init = async () => {
+  const init = async () => {
+    const finishReady = () => {
+      if (!cancelled) setIsReady(true);
+    };
+
+    try {
+      const timeout = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), 1200);
+      });
+
       try {
-        try {
-          const ctx: any = await sdk?.context;
-          if (!cancelled && ctx?.user) {
-            setUser((prev) => ({
-              ...prev,
-              fid: ctx.user.fid,
-              username: ctx.user.username,
-              displayName: ctx.user.displayName,
-              pfpUrl: ctx.user.pfpUrl,
-            }));
-          }
-        } catch (ctxErr) {
-          console.warn("No Farcaster/Base context available:", ctxErr);
-        }
+        const ctx: any = await Promise.race([
+          sdk?.context,
+          timeout,
+        ]);
 
-        try {
-          await sdk?.actions?.ready?.();
-        } catch (readyErr) {
-          console.warn("ready() no disponible:", readyErr);
+        if (!cancelled && ctx?.user) {
+          setUser({
+            fid: ctx.user.fid,
+            username: ctx.user.username,
+            displayName: ctx.user.displayName,
+            pfpUrl: ctx.user.pfpUrl,
+          });
         }
       } catch (err) {
-        console.error("Error inicializando la app:", err);
-      } finally {
-        if (!cancelled) {
-          setIsReady(true);
-        }
+        console.warn("No Farcaster/Base context:", err);
       }
-    };
 
-    init();
+      try {
+        await sdk?.actions?.ready?.();
+      } catch (err) {
+        console.warn("ready() no disponible:", err);
+      }
+    } catch (err) {
+      console.error("Error inicializando:", err);
+    } finally {
+      finishReady();
+    }
+  };
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  init();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   // ---------------------------------------------------------------------------
   // Sincronizar wallet conectada con user
