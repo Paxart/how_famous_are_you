@@ -58,43 +58,33 @@ export default function MiniAppClient() {
 useEffect(() => {
   let cancelled = false;
 
+  // 🔥 CLAVE: renderizamos SIEMPRE
+  setIsReady(true);
+
   const init = async () => {
-    const finishReady = () => {
-      if (!cancelled) setIsReady(true);
-    };
-
     try {
-      const timeout = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), 1200);
-      });
+      const timeout = new Promise((resolve) =>
+        setTimeout(() => resolve(null), 500)
+      );
 
-      try {
-        const ctx: any = await Promise.race([
-          sdk?.context,
-          timeout,
-        ]);
+      const ctx: any = await Promise.race([
+        sdk?.context,
+        timeout,
+      ]);
 
-        if (!cancelled && ctx?.user) {
-          setUser({
-            fid: ctx.user.fid,
-            username: ctx.user.username,
-            displayName: ctx.user.displayName,
-            pfpUrl: ctx.user.pfpUrl,
-          });
-        }
-      } catch (err) {
-        console.warn("No Farcaster/Base context:", err);
+      if (!cancelled && ctx?.user) {
+        setUser({
+          fid: ctx.user.fid,
+          username: ctx.user.username,
+          displayName: ctx.user.displayName,
+          pfpUrl: ctx.user.pfpUrl,
+        });
       }
 
-      try {
-        await sdk?.actions?.ready?.();
-      } catch (err) {
-        console.warn("ready() no disponible:", err);
-      }
+      // ⚠️ NO bloquea nada
+      sdk?.actions?.ready?.().catch(() => {});
     } catch (err) {
-      console.error("Error inicializando:", err);
-    } finally {
-      finishReady();
+      console.warn("SDK falló pero seguimos:", err);
     }
   };
 
@@ -104,84 +94,6 @@ useEffect(() => {
     cancelled = true;
   };
 }, []);
-
-  // ---------------------------------------------------------------------------
-  // Sincronizar wallet conectada con user
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    if (!isConnected || !address) return;
-
-    setUser((prev) => ({
-      ...prev,
-      address,
-      displayName:
-        prev?.displayName || `${address.slice(0, 6)}...${address.slice(-4)}`,
-    }));
-  }, [isConnected, address]);
-
-  // ---------------------------------------------------------------------------
-  // TIMER
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    if (phase !== "playing" || timeLeft === null) return;
-    if (timeLeft <= 0) {
-      setPhase("finished");
-      return;
-    }
-
-    const id = window.setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev === null || prev <= 0) return prev;
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(id);
-  }, [phase, timeLeft]);
-
-  const formatTime = (seconds: number) => {
-    const s = Math.max(0, seconds);
-    const m = Math.floor(s / 60);
-    const rest = s % 60;
-    return `${m}:${rest.toString().padStart(2, "0")}`;
-  };
-
-  // ---------------------------------------------------------------------------
-  // Cargar ranking
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    const loadRanking = async () => {
-      if (phase !== "ranking" || !selectedTrivia) return;
-      try {
-        setRankingLoading(true);
-        setRankingError(null);
-        setRanking(null);
-
-        const res = await fetch(
-          `/api/cinetrivia/score?triviaId=${encodeURIComponent(selectedTrivia.id)}`,
-          { method: "GET" }
-        );
-
-        if (!res.ok) {
-          throw new Error("Respuesta no OK del servidor");
-        }
-
-        const data = await res.json();
-        const scores: RankingEntry[] = data.scores ?? data ?? [];
-        setRanking(scores);
-      } catch (err) {
-        console.error("Error cargando ranking:", err);
-        setRankingError(
-          "No se pudo cargar el ranking. Inténtalo de nuevo más tarde."
-        );
-      } finally {
-        setRankingLoading(false);
-      }
-    };
-
-    loadRanking();
-  }, [phase, selectedTrivia]);
-
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
